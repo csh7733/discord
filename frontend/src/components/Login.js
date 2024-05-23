@@ -1,52 +1,58 @@
-import React, { useState } from 'react';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Link from '@mui/material/Link';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; 
-import Title from '../assets/title.png';
+import React, { useState } from "react";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Link from "@mui/material/Link";
+import Grid from "@mui/material/Grid";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import Title from "../assets/title.png";
 
 function Copyright(props) {
   return (
-    <Typography variant="body2" color="text.secondary" align="center" {...props}>
-      {'네트워크 프로토콜 © '}
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      align="center"
+      {...props}
+    >
+      {"네트워크 프로토콜 © "}
       <Link color="inherit" href="https://mui.com/">
         최성현 박지원 류지승
-      </Link>{' '}
+      </Link>{" "}
       {new Date().getFullYear()}
-      {'.'}
+      {"."}
     </Typography>
   );
 }
 
-export default function Login({ onSignUpOpen, onClose }) { // onClose prop 추가
-  const navigate = useNavigate(); 
-  const [error, setError] = useState(''); 
-  const handleSubmit = async e => {
+export default function Login({ onSignUpOpen, onClose }) {
+  // onClose prop 추가
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const { email, password } = Object.fromEntries(data.entries());
     try {
-        const response = await axios.post('/api/login', {
-            email,
-            password
+      const response = await axios.post("/api/login", {
+        email,
+        password,
       });
       const jwt = response.data;
-      localStorage.setItem('token', jwt);
+      localStorage.setItem("token", jwt);
       onClose(); // 로그인 모달 닫기
-      navigate('/');
+      navigate("/");
     } catch (error) {
       if (error.response) {
         if (error.response.status === 401) {
-          setError('Invalid email or password');
+          setError("Invalid email or password");
         } else {
-          setError('An unexpected error occurred');
+          setError("An unexpected error occurred");
         }
       } else {
-        setError('Network error');
+        setError("Network error");
       }
     }
   };
@@ -54,9 +60,9 @@ export default function Login({ onSignUpOpen, onClose }) { // onClose prop 추�
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
       }}
     >
       <img src={Title} alt="Title" style={{ width: 100, height: 100 }} />
