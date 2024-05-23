@@ -31,6 +31,7 @@ import UserList from "./UserList";
 import discordTheme from "./Theme";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
+import Snackbar from "@mui/material/Snackbar";
 import DialogActions from "@mui/material/DialogActions";
 import Login from "./Login";
 import SignUp from "./SignUp";
@@ -130,11 +131,10 @@ const initialMessagesChannel2 = [
 ];
 
 export default function Dashboard() {
-  const { currentMember } = useCurrentMember();
-  console.log(currentMember);
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [signUpOpen, setSignUpOpen] = React.useState(false);
   const [selectedChannel, setSelectedChannel] = React.useState("채팅 채널 1"); // 현재 선택된 채널을 관리하는 상태
+  const { currentMember } = useCurrentMember();
   const [channels, setChannels] = React.useState([
     {
       id: 1,
@@ -154,6 +154,12 @@ export default function Dashboard() {
     { id: 2, name: "음성 채널 2", type: "voice" },
   ]); // 음성 채널 목록을 관리하는 상태
   const [anchorEl, setAnchorEl] = React.useState(null);
+
+  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setSnackbarOpen(true);
+  }, []);
 
   const handleLoginOpen = () => {
     setLoginOpen(true);
@@ -348,6 +354,12 @@ export default function Dashboard() {
               </Grid>
             </Grid>
           </Container>
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={6000}
+            onClose={() => setSnackbarOpen(false)}
+            message={`${currentMember} 님, 환영합니다!`} // Using template literals
+          />
           <Box sx={{ display: "flex", justifyContent: "center", mt: "auto" }}>
             <Copyright />
           </Box>
