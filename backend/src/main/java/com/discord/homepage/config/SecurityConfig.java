@@ -1,4 +1,4 @@
-package com.discord.homepage;
+package com.discord.homepage.config;
 
 import com.discord.homepage.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +28,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/login").permitAll()
                         .requestMatchers("/api/register").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/v2/api-docs",
+                                "/swagger-resources",
+                                "/swagger-resources/**",
+                                "/configuration/ui",
+                                "/configuration/security",
+                                "/swagger-ui.html",
+                                "/webjars/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**", "/configuration/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated())
                 .build();
     }

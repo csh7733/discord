@@ -1,4 +1,4 @@
-package com.discord.homepage.controller;
+package com.discord.homepage.controller.member;
 
 import com.discord.homepage.dto.MemberDto;
 import lombok.RequiredArgsConstructor;

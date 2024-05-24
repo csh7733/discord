@@ -1,13 +1,12 @@
 package com.discord.homepage.domain.member;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.discord.homepage.domain.voicechannel.VoiceChannel;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 
 @Data
 @Entity
@@ -20,6 +19,10 @@ public class Member {
     private String username;
     private String email;
     private String password;
+
+    @ManyToOne
+    @JoinColumn(name = "voice_channel_id")
+    private VoiceChannel voiceChannel;
 
     public Member(String username, String email, String password) {
         this.username = username;
