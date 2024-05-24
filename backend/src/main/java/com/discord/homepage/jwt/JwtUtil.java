@@ -10,7 +10,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.discord.homepage.discordConst.EXPIRED_TIME;
+import static com.discord.homepage.constant.discordConst.EXPIRED_TIME;
 
 public class JwtUtil {
     private static String secretKey = "secret-key-virtual-currency-123";

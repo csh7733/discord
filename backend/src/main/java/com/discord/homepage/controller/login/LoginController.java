@@ -1,4 +1,4 @@
-package com.discord.homepage.controller;
+package com.discord.homepage.controller.login;
 
 import com.discord.homepage.domain.member.Member;
 import com.discord.homepage.dto.RequestLoginDto;
