@@ -13,20 +13,61 @@ import {
 import discordTheme from "./Theme";
 import avatar3 from "../assets/avatar/3.png"; // 최성현의 아바타를 기본값으로 불러오기
 import { useCurrentMember } from "../hooks/useCurrentMember";
+import apiClient from "../apiClient"; // apiClient를 import
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 
-const ChatChannel = ({ channel, initialMessages }) => {
+const ChatChannel = ({ channel, channelId }) => {
   const { currentMember } = useCurrentMember();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef(null);
 
+  // WebSocket 클라이언트 설정
+  const client = useRef(null);
+
   useEffect(() => {
-    setMessages(initialMessages); // 선택된 채널이 변경될 때 초기 메시지를 설정
-  }, [channel, initialMessages]);
+    client.current = new Client({
+      brokerURL: "ws://localhost:8080/ws",
+      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      onConnect: () => {
+        console.log("Connected to WebSocket");
+
+        client.current.subscribe(`/topic/channel/${channelId}`, (message) => {
+          const receivedMessage = JSON.parse(message.body);
+          setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+        });
+      },
+      onStompError: (frame) => {
+        console.error("Broker reported error: " + frame.headers["message"]);
+        console.error("Additional details: " + frame.body);
+      },
+    });
+
+    client.current.activate();
+
+    return () => {
+      client.current.deactivate();
+    };
+  }, [channelId]);
+
+  // 채널 변경 시 초기 메시지를 가져오는 함수
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await apiClient.get(`/channels/${channelId}`);
+        setMessages(response.data);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+
+    fetchMessages();
+  }, [channelId]);
 
   const handleSendMessage = () => {
     const message = {
-      user: currentMember,
+      username: currentMember,
       content: newMessage,
       avatar: avatar3, // 최성현의 아바타 사용
       time: new Date().toLocaleTimeString([], {
@@ -34,7 +75,12 @@ const ChatChannel = ({ channel, initialMessages }) => {
         minute: "2-digit",
       }),
     };
-    setMessages((prevMessages) => [...prevMessages, message]);
+
+    client.current.publish({
+      destination: `/app/channel/${channelId}`,
+      body: JSON.stringify(message),
+    });
+
     setNewMessage("");
   };
 
@@ -81,7 +127,7 @@ const ChatChannel = ({ channel, initialMessages }) => {
                       color: discordTheme.palette.text.primary,
                     }}
                   >
-                    {message.user}{" "}
+                    {message.username}{" "}
                     <span
                       style={{
                         fontWeight: "normal",

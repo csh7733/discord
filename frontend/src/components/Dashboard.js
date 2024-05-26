@@ -88,52 +88,55 @@ const Drawer = styled(MuiDrawer, {
 
 const initialMessagesChannel1 = [
   {
-    user: "류지승",
+    username: "류지승",
     content: "안녕하세요",
     avatar: avatar2,
     time: "오전 09:52",
   },
   {
-    user: "박지원",
+    username: "박지원",
     content: "좋은 아침입니다",
     avatar: avatar1,
     time: "오전 09:53",
   },
   {
-    user: "최성현",
+    username: "최성현",
     content: "아침은 뭐 드셨나요?",
     avatar: avatar3,
     time: "오전 09:53",
   },
-  { user: "류지승", content: "김치찌개", avatar: avatar2, time: "오전 09:54" },
+  { username: "류지승", content: "김치찌개", avatar: avatar2, time: "오전 09:54" },
 ];
 
 const initialMessagesChannel2 = [
   {
-    user: "류지승",
+    username: "류지승",
     content: "안녕하세요",
     avatar: avatar2,
     time: "오후 08:52",
   },
   {
-    user: "박지원",
+    username: "박지원",
     content: "좋은 저녁입니다",
     avatar: avatar1,
     time: "오후 08:53",
   },
   {
-    user: "최성현",
+    username: "최성현",
     content: "저녁은 뭐 드셨나요?",
     avatar: avatar3,
     time: "오후 09:53",
   },
-  { user: "류지승", content: "된장찌개", avatar: avatar2, time: "오후 10:54" },
+  { username: "류지승", content: "된장찌개", avatar: avatar2, time: "오후 10:54" },
 ];
 
 export default function Dashboard() {
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [signUpOpen, setSignUpOpen] = React.useState(false);
-  const [selectedChannel, setSelectedChannel] = React.useState("채팅 채널 1"); // 현재 선택된 채널을 관리하는 상태
+  const [selectedChannel, setSelectedChannel] = React.useState({
+    id: 1,
+    name: "채팅 채널 1",
+  }); // 현재 선택된 채널을 관리하는 상태
   const { currentMember } = useCurrentMember();
   const [channels, setChannels] = React.useState([
     {
@@ -180,7 +183,7 @@ export default function Dashboard() {
   };
 
   const handleChannelSelect = (channel) => {
-    setSelectedChannel(channel.name);
+    setSelectedChannel(channel);
   };
 
   const handleProfileMenuOpen = (event) => {
@@ -338,14 +341,14 @@ export default function Dashboard() {
                     height: "100%",
                   }}
                 >
-                  {selectedChannel.includes("채팅 채널") && (
+                  {selectedChannel.name.includes("채팅 채널") && (
                     <ChatChannel
-                      channel={selectedChannel}
-                      initialMessages={getInitialMessages(selectedChannel)}
+                      channel={selectedChannel.name}
+                      channelId={selectedChannel.id} // Pass channel ID
                     />
                   )}
-                  {selectedChannel.includes("음성 채널") && (
-                    <VoiceChannel channelId={selectedChannel} />
+                  {selectedChannel.name.includes("음성 채널") && (
+                    <VoiceChannel channelId={selectedChannel.id} />
                   )}
                 </Paper>
               </Grid>
