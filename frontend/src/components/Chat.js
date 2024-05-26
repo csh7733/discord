@@ -26,7 +26,7 @@ const ChatChannel = ({ channel, initialMessages }) => {
 
   const handleSendMessage = () => {
     const message = {
-      user: currentMember,
+      user: currentMember ? undefined : "anonymous",
       content: newMessage,
       avatar: avatar3, // 최성현의 아바타 사용
       time: new Date().toLocaleTimeString([], {

@@ -1,28 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Box, Grid, Typography, Avatar } from "@mui/material";
 import { useCurrentMember } from "../hooks/useCurrentMember";
-
-const getRandomUser = () => {
-  const randomId = Math.floor(Math.random() * 1000);
-  return { id: randomId, name: `User ${randomId}` };
-};
+import apiClient from "../apiClient";
 
 const VoiceChannel = ({ channelId }) => {
   const { currentMember } = useCurrentMember();
-
-  const [users, setUsers] = useState([]);
+  const [members, setmembers] = useState([]);
 
   useEffect(() => {
-    setUsers([{ id: Math.floor(Math.random() * 1000), name: currentMember }]);
+    const fetchmembers = async () => {
+      try {
+        const response = await apiClient.get(
+          `http://localhost:8080/api/voice-channel/${channelId}/members`
+        );
+        const data = response.data;
+        setmembers(data);
+      } catch (error) {
+        console.error("Error fetching members:", error);
+      }
+    };
 
-    const intervalId = setInterval(() => {
-      const newUser = getRandomUser();
-      console.log("user added:", newUser);
-      setUsers((prevUsers) => [...prevUsers, newUser]);
-    }, 5000); // 10 seconds
+    fetchmembers();
+  }, [channelId]);
 
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, [channelId, currentMember]);
+  const startVideoChat = (userId) => {
+    // Logic to start video chat with the given user ID
+  };
 
   return (
     <Box p={2}>
@@ -30,7 +33,7 @@ const VoiceChannel = ({ channelId }) => {
         Voice Channel: {channelId}
       </Typography>
       <Grid container spacing={2}>
-        {users.map((user) => (
+        {members.map((user) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={user.id}>
             <Box
               display="flex"
@@ -47,6 +50,13 @@ const VoiceChannel = ({ channelId }) => {
                 sx={{ width: 100, height: 100, mb: 1 }}
               />
               <Typography>{user.name}</Typography>
+              <video
+                ref={(videoRef) => startVideoChat(user.id, videoRef)}
+                width="100%"
+                autoPlay
+                muted
+                style={{ marginTop: "1em" }}
+              ></video>
             </Box>
           </Grid>
         ))}

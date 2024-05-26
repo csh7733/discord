@@ -42,6 +42,10 @@ import avatar2 from "../assets/avatar/2.png";
 import avatar3 from "../assets/avatar/3.png";
 import VoiceChannel from "./Voice";
 import { useCurrentMember } from "../hooks/useCurrentMember";
+import VoiceChat from "./Voice";
+import Videochat from "./VideoChat";
+import VideoChatting from "./VideoChatting";
+import VideoStream from "./VideoStream";
 
 function Copyright(props) {
   return (
@@ -133,7 +137,12 @@ const initialMessagesChannel2 = [
 export default function Dashboard() {
   const [loginOpen, setLoginOpen] = React.useState(false);
   const [signUpOpen, setSignUpOpen] = React.useState(false);
-  const [selectedChannel, setSelectedChannel] = React.useState("채팅 채널 1"); // 현재 선택된 채널을 관리하는 상태
+  const [selectedChannel, setSelectedChannel] = React.useState({
+    id: 1,
+    name: "채팅 채널 1",
+    messages: initialMessagesChannel1,
+    type: "chat",
+  }); // 현재 선택된 채널을 관리하는 상태
   const { currentMember } = useCurrentMember();
   const [channels, setChannels] = React.useState([
     {
@@ -158,8 +167,8 @@ export default function Dashboard() {
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
   React.useEffect(() => {
-    setSnackbarOpen(true);
-  }, []);
+    if (currentMember !== undefined) setSnackbarOpen(true);
+  }, [currentMember]);
 
   const handleLoginOpen = () => {
     setLoginOpen(true);
@@ -180,7 +189,7 @@ export default function Dashboard() {
   };
 
   const handleChannelSelect = (channel) => {
-    setSelectedChannel(channel.name);
+    setSelectedChannel(channel);
   };
 
   const handleProfileMenuOpen = (event) => {
@@ -338,14 +347,19 @@ export default function Dashboard() {
                     height: "100%",
                   }}
                 >
-                  {selectedChannel.includes("채팅 채널") && (
+                  {selectedChannel.name.includes("채팅 채널") && (
                     <ChatChannel
-                      channel={selectedChannel}
-                      initialMessages={getInitialMessages(selectedChannel)}
+                      channel={selectedChannel.name}
+                      initialMessages={getInitialMessages(selectedChannel.name)}
                     />
                   )}
-                  {selectedChannel.includes("음성 채널") && (
-                    <VoiceChannel channelId={selectedChannel} />
+                  {selectedChannel.name.includes("음성 채널") && (
+                    // <VoiceChannel channelId={selectedChannel} />
+                    <VideoChatting
+                      userId={currentMember.email}
+                      channelId={selectedChannel.id}
+                    />
+                    //<VideoStream />
                   )}
                 </Paper>
               </Grid>
@@ -354,12 +368,7 @@ export default function Dashboard() {
               </Grid>
             </Grid>
           </Container>
-          <Snackbar
-            open={snackbarOpen}
-            autoHideDuration={6000}
-            onClose={() => setSnackbarOpen(false)}
-            message={`${currentMember} 님, 환영합니다!`} // Using template literals
-          />
+
           <Box sx={{ display: "flex", justifyContent: "center", mt: "auto" }}>
             <Copyright />
           </Box>
