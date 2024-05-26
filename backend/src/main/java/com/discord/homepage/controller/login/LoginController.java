@@ -1,6 +1,7 @@
 package com.discord.homepage.controller.login;
 
 import com.discord.homepage.domain.member.Member;
+import com.discord.homepage.dto.RequestFindPasswordDto;
 import com.discord.homepage.dto.RequestLoginDto;
 import com.discord.homepage.dto.RequestRegisterDto;
 import com.discord.homepage.jwt.JwtUtil;
@@ -22,13 +23,19 @@ public class LoginController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody RequestLoginDto requestLoginDto) {
-        //아이디 비밀번호 확인
-        Optional<Member> findMember = memberService.findMember(requestLoginDto.getEmail(), requestLoginDto.getPassword());
-        if(findMember.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+        Optional<Member> findMember = memberService.findMemberByEmail(requestLoginDto.getEmail());
+        if (findMember.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with this email not found");
         }
+        log.info(findMember.get().toString());
+        // 아이디 비밀번호 확인
+        findMember = memberService.findMember(requestLoginDto.getEmail(), requestLoginDto.getPassword());
+        if (findMember.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Password error");
+        }
+
         Member member = findMember.get();
-        String jwt = JwtUtil.generateToken(member.getUsername(),member.getEmail());
+        String jwt = JwtUtil.generateToken(member.getUsername(), member.getEmail());
 
         return ResponseEntity.ok(jwt);
     }
@@ -45,5 +52,26 @@ public class LoginController {
         // 계정 생성
         memberService.join(member);
         return ResponseEntity.ok("ok");
+    }
+
+    @PostMapping("/login/find")
+    public ResponseEntity<String> findPassword(@RequestBody RequestFindPasswordDto requestFindPasswordDto) {
+        Optional<Member> findMember = memberService.findMemberByUsernameAndEmail(
+                requestFindPasswordDto.getUsername(), requestFindPasswordDto.getEmail());
+
+        if (findMember.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No user found with the provided information");
+        }
+
+        String password = findMember.get().getPassword();
+        String maskedPassword = maskPassword(password);
+        return ResponseEntity.ok(maskedPassword);
+    }
+
+    private String maskPassword(String password) {
+        if (password.length() <= 4) {
+            return password + "****";
+        }
+        return password.substring(0, 4) + "****";
     }
 }

@@ -6,7 +6,6 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import Title from "../assets/title.png";
 
 function Copyright(props) {
@@ -27,40 +26,35 @@ function Copyright(props) {
   );
 }
 
-export default function Login({ onSignUpOpen, onClose, onLogin, onFindPasswordOpen }) { // onFindPasswordOpen 추가
-  const navigate = useNavigate();
+export default function FindPassword({ onLoginOpen}) {
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    const { email, password } = Object.fromEntries(data.entries());
+    const { username, email } = Object.fromEntries(data.entries());
     try {
-        const response = await axios.post("/api/login", {
-            email,
-            password,
-        });
-        const jwt = response.data;
-        localStorage.setItem("token", jwt);
-        onClose(); // 로그인 모달 닫기
-        if (onLogin) {
-            onLogin(); // SWR 캐시 갱신
-        }
-        navigate("/");
+      const response = await axios.post("/api/login/find", {
+        username,
+        email,
+      });
+      const password = response.data;
+      setSuccessMessage(`Your password is: ${password}`);
+      setError("");
     } catch (error) {
-        if (error.response) {
-            if (error.response.status === 404) {
-                setError("User with this email not found");
-            } else if (error.response.status === 401) {
-                setError("Invalid password");
-            } else {
-                setError("An unexpected error occurred");
-            }
+      if (error.response) {
+        if (error.response.status === 404) {
+          setError("No user found with the provided information");
         } else {
-            setError("Network error");
+          setError("An unexpected error occurred");
         }
+      } else {
+        setError("Network error");
+      }
+      setSuccessMessage("");
     }
-};
-
+  };
 
   return (
     <Box
@@ -72,9 +66,19 @@ export default function Login({ onSignUpOpen, onClose, onLogin, onFindPasswordOp
     >
       <img src={Title} alt="Title" style={{ width: 100, height: 100 }} />
       <Typography component="h1" variant="h5">
-        Log In
+        Find Password
       </Typography>
       <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+        <TextField
+          margin="normal"
+          required
+          fullWidth
+          id="username"
+          label="Username"
+          name="username"
+          autoComplete="username"
+          autoFocus
+        />
         <TextField
           margin="normal"
           required
@@ -83,21 +87,15 @@ export default function Login({ onSignUpOpen, onClose, onLogin, onFindPasswordOp
           label="Email Address"
           name="email"
           autoComplete="email"
-          autoFocus
-        />
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          name="password"
-          label="Password"
-          type="password"
-          id="password"
-          autoComplete="current-password"
         />
         {error && (
           <Typography color="error" variant="body2" align="center">
             {error}
+          </Typography>
+        )}
+        {successMessage && (
+          <Typography color="success" variant="body2" align="center">
+            {successMessage}
           </Typography>
         )}
         <Button
@@ -106,17 +104,12 @@ export default function Login({ onSignUpOpen, onClose, onLogin, onFindPasswordOp
           variant="contained"
           sx={{ mt: 3, mb: 2 }}
         >
-          Log In
+          Find Password
         </Button>
         <Grid container>
-          <Grid item xs>
-            <Link href="#" variant="body2" onClick={onFindPasswordOpen}>
-              {"Forgot password?"}
-            </Link>
-          </Grid>
           <Grid item>
-            <Link href="#" variant="body2" onClick={onSignUpOpen}>
-              {"Don't have an account? Register"}
+            <Link href="#" variant="body2" onClick={onLoginOpen}>
+              {"Go back to login"}
             </Link>
           </Grid>
         </Grid>

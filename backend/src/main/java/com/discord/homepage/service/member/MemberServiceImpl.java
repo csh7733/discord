@@ -27,6 +27,11 @@ public class MemberServiceImpl implements MemberService{
     }
 
     @Override
+    public Optional<Member> findMemberByUsernameAndEmail(String username, String email) {
+        return memberRepository.findByUsernameAndEmail(username,email);
+    }
+
+    @Override
     public Optional<Member> findMemberByUsername(String username) {
         return memberRepository.findByUsername(username);
     }

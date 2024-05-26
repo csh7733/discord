@@ -55,6 +55,7 @@ const ChatChannel = ({ channel, channelId }) => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
+        setMessages([]);
         const response = await apiClient.get(`/channels/${channelId}`);
         setMessages(response.data);
       } catch (error) {
@@ -63,7 +64,7 @@ const ChatChannel = ({ channel, channelId }) => {
     };
 
     fetchMessages();
-  }, [channelId]);
+  }, [channelId, currentMember]);
 
   const handleSendMessage = () => {
     const message = {
@@ -151,27 +152,35 @@ const ChatChannel = ({ channel, channelId }) => {
           </List>
         </Box>
         <Box display="flex" p={1} borderTop="1px solid #202225">
-          <TextField
-            fullWidth
-            variant="outlined"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress} // 엔터 키 이벤트 핸들러 추가
-            placeholder="메시지를 입력하세요..."
-            size="small"
-            InputProps={{
-              style: { background: "#40444B", color: "#FFFFFF" },
-            }}
-            style={{ marginRight: "8px" }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSendMessage}
-            size="small"
-          >
-            전송
-          </Button>
+          {currentMember ? (
+            <>
+              <TextField
+                fullWidth
+                variant="outlined"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress} // 엔터 키 이벤트 핸들러 추가
+                placeholder="메시지를 입력하세요..."
+                size="small"
+                InputProps={{
+                  style: { background: "#40444B", color: "#FFFFFF" },
+                }}
+                style={{ marginRight: "8px" }}
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSendMessage}
+                size="small"
+              >
+                전송
+              </Button>
+            </>
+          ) : (
+            <Typography variant="body1" color="textSecondary" align="center" sx={{ flexGrow: 1 }}>
+              로그인 후 이용해주세요
+            </Typography>
+          )}
         </Box>
       </Box>
     </ThemeProvider>

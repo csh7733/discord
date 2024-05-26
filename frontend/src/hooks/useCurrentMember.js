@@ -3,7 +3,6 @@ import apiClient from "../apiClient";
 
 const useCurrentMember = () => {
   const apiUrl = "http://localhost:8080/api/member";
-
   const { data, isLoading, error, mutate } = useSWR(
     [apiUrl], // URL을 배열로 전달
     async (url) => {

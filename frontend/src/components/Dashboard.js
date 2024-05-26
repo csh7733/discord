@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useRef, useState } from "react";
 import { styled, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import MuiDrawer from "@mui/material/Drawer";
@@ -35,6 +36,7 @@ import Snackbar from "@mui/material/Snackbar";
 import DialogActions from "@mui/material/DialogActions";
 import Login from "./Login";
 import SignUp from "./SignUp";
+import FindPassword from "./FindPassword"; // FindPassword 추가
 import Title from "../assets/title.png";
 import TitleText from "../assets/title-text.png";
 import avatar1 from "../assets/avatar/1.png";
@@ -42,6 +44,10 @@ import avatar2 from "../assets/avatar/2.png";
 import avatar3 from "../assets/avatar/3.png";
 import VoiceChannel from "./Voice";
 import { useCurrentMember } from "../hooks/useCurrentMember";
+import TextField from "@mui/material/TextField";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 function Copyright(props) {
   return (
@@ -86,79 +92,48 @@ const Drawer = styled(MuiDrawer, {
   },
 }));
 
-const initialMessagesChannel1 = [
-  {
-    username: "류지승",
-    content: "안녕하세요",
-    avatar: avatar2,
-    time: "오전 09:52",
-  },
-  {
-    username: "박지원",
-    content: "좋은 아침입니다",
-    avatar: avatar1,
-    time: "오전 09:53",
-  },
-  {
-    username: "최성현",
-    content: "아침은 뭐 드셨나요?",
-    avatar: avatar3,
-    time: "오전 09:53",
-  },
-  { username: "류지승", content: "김치찌개", avatar: avatar2, time: "오전 09:54" },
-];
-
-const initialMessagesChannel2 = [
-  {
-    username: "류지승",
-    content: "안녕하세요",
-    avatar: avatar2,
-    time: "오후 08:52",
-  },
-  {
-    username: "박지원",
-    content: "좋은 저녁입니다",
-    avatar: avatar1,
-    time: "오후 08:53",
-  },
-  {
-    username: "최성현",
-    content: "저녁은 뭐 드셨나요?",
-    avatar: avatar3,
-    time: "오후 09:53",
-  },
-  { username: "류지승", content: "된장찌개", avatar: avatar2, time: "오후 10:54" },
-];
-
 export default function Dashboard() {
-  const [loginOpen, setLoginOpen] = React.useState(false);
-  const [signUpOpen, setSignUpOpen] = React.useState(false);
-  const [selectedChannel, setSelectedChannel] = React.useState({
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [signUpOpen, setSignUpOpen] = useState(false);
+  const [findPasswordOpen, setFindPasswordOpen] = useState(false); // 비밀번호 찾기 모달 상태 추가
+  const chatChannelIdRef = useRef(3);
+  const voiceChannelIdRef = useRef(3);
+  const [selectedChannel, setSelectedChannel] = useState({
     id: 1,
+    key: "channel1",
     name: "채팅 채널 1",
+    type: "chat",
   }); // 현재 선택된 채널을 관리하는 상태
-  const { currentMember } = useCurrentMember();
-  const [channels, setChannels] = React.useState([
+  const { currentMember, isLoading, error, currentUserMutate } = useCurrentMember(); // useCurrentMember 훅 사용
+  const [channels, setChannels] = useState([
     {
       id: 1,
+      key: "channel1",
       name: "채팅 채널 1",
-      messages: initialMessagesChannel1,
+      messages: [],
       type: "chat",
     },
     {
       id: 2,
+      key: "channel2",
       name: "채팅 채널 2",
-      messages: initialMessagesChannel2,
+      messages: [],
       type: "chat",
     },
   ]); // 채널 목록을 관리하는 상태
-  const [voiceChannels, setVoiceChannels] = React.useState([
-    { id: 1, name: "음성 채널 1", type: "voice" },
-    { id: 2, name: "음성 채널 2", type: "voice" },
+  const [voiceChannels, setVoiceChannels] = useState([
+    { id: 1, key: "voice1", name: "음성 채널 1", type: "voice" },
+    { id: 2, key: "voice2", name: "음성 채널 2", type: "voice" },
   ]); // 음성 채널 목록을 관리하는 상태
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  // 추가된 상태
+  const [contextMenu, setContextMenu] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [channelToEdit, setChannelToEdit] = useState(null);
+  const [channelName, setChannelName] = useState("");
 
   React.useEffect(() => {
     setSnackbarOpen(true);
@@ -167,6 +142,7 @@ export default function Dashboard() {
   const handleLoginOpen = () => {
     setLoginOpen(true);
     setSignUpOpen(false);
+    setFindPasswordOpen(false); // 비밀번호 찾기 모달 닫기
   };
 
   const handleLoginClose = () => {
@@ -176,10 +152,21 @@ export default function Dashboard() {
   const handleSignUpOpen = () => {
     setSignUpOpen(true);
     setLoginOpen(false);
+    setFindPasswordOpen(false); // 비밀번호 찾기 모달 닫기
   };
 
   const handleSignUpClose = () => {
     setSignUpOpen(false);
+  };
+
+  const handleFindPasswordOpen = () => {
+    setFindPasswordOpen(true);
+    setLoginOpen(false);
+    setSignUpOpen(false);
+  };
+
+  const handleFindPasswordClose = () => {
+    setFindPasswordOpen(false);
   };
 
   const handleChannelSelect = (channel) => {
@@ -195,18 +182,29 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    // 로그아웃 로직 추가
-    console.log("Logged out");
+    // 로컬 스토리지에서 토큰 삭제
+    localStorage.removeItem("token");
+
+    // SWR의 캐시에서 currentMember 삭제
+    currentUserMutate(null, false);
     handleMenuClose();
+  };
+
+  const handleLogin = async () => {
+    currentUserMutate();
+
+    handleLoginClose();
   };
 
   const isMenuOpen = Boolean(anchorEl);
   const menuId = "primary-search-account-menu";
 
   const handleAddChatChannel = () => {
-    const newChannelId = channels.length + 1;
+    const newChannelId = chatChannelIdRef.current;
+    chatChannelIdRef.current += 1; // 다음에 사용할 ID 증가
     const newChannel = {
       id: newChannelId,
+      key: `chat${newChannelId}`, // 채팅 채널 ID를 고유하게 변경
       name: `채팅 채널 ${newChannelId}`,
       messages: [],
       type: "chat",
@@ -215,18 +213,82 @@ export default function Dashboard() {
   };
 
   const handleAddVoiceChannel = () => {
-    const newChannelId = voiceChannels.length + 1;
+    const newChannelId = voiceChannelIdRef.current;
+    voiceChannelIdRef.current += 1; // 다음에 사용할 ID 증가
     const newChannel = {
       id: newChannelId,
+      key: `voice${newChannelId}`, // 음성 채널 ID를 고유하게 변경
       name: `음성 채널 ${newChannelId}`,
       type: "voice",
     };
     setVoiceChannels([...voiceChannels, newChannel]);
   };
 
-  const getInitialMessages = (channelName) => {
-    const channel = channels.find((c) => c.name === channelName);
-    return channel ? channel.messages : [];
+  // 추가된 함수들
+  const handleContextMenu = (event, channel) => {
+    event.preventDefault();
+    setContextMenu(
+      contextMenu === null
+        ? {
+            mouseX: event.clientX - 2,
+            mouseY: event.clientY - 4,
+            channel,
+          }
+        : null,
+    );
+  };
+
+  const handleContextMenuClose = () => {
+    setContextMenu(null);
+  };
+
+  const handleEditChannel = () => {
+    setChannelName(contextMenu.channel.name);
+    setChannelToEdit(contextMenu.channel);
+    setEditDialogOpen(true);
+    handleContextMenuClose();
+  };
+
+  const handleDeleteChannel = () => {
+    if (contextMenu.channel.type === "chat") {
+      const newChannels = channels.filter(
+        (channel) => channel.id !== contextMenu.channel.id,
+      );
+      setChannels(newChannels);
+    } else {
+      const newVoiceChannels = voiceChannels.filter(
+        (channel) => channel.id !== contextMenu.channel.id,
+      );
+      setVoiceChannels(newVoiceChannels);
+    }
+    handleContextMenuClose();
+  };
+
+  const handleEditDialogClose = () => {
+    setEditDialogOpen(false);
+  };
+
+  const handleChannelNameChange = (event) => {
+    setChannelName(event.target.value);
+  };
+
+  const handleChannelNameSave = () => {
+    if (channelToEdit.type === "chat") {
+      const newChannels = channels.map((channel) =>
+        channel.id === channelToEdit.id
+          ? { ...channel, name: channelName }
+          : channel,
+      );
+      setChannels(newChannels);
+    } else {
+      const newVoiceChannels = voiceChannels.map((channel) =>
+        channel.id === channelToEdit.id
+          ? { ...channel, name: channelName }
+          : channel,
+      );
+      setVoiceChannels(newVoiceChannels);
+    }
+    setEditDialogOpen(false);
   };
 
   return (
@@ -246,22 +308,32 @@ export default function Dashboard() {
               style={{ height: "40px", marginLeft: "10px" }}
             />
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
-            <Button onClick={handleLoginOpen} color="inherit" sx={{ mr: 2 }}>
-              Log In
-            </Button>
-            <Button onClick={handleSignUpOpen} color="inherit" sx={{ mr: 2 }}>
-              Register
-            </Button>
-            <IconButton
-              edge="end"
-              aria-label="account of current user"
-              aria-controls={menuId}
-              aria-haspopup="true"
-              onClick={handleProfileMenuOpen}
-              color="inherit"
-            >
-              <AccountCircle />
-            </IconButton>
+            {!currentMember ? (
+              <>
+                <Button onClick={handleLoginOpen} color="inherit" sx={{ mr: 2 }}>
+                  Log In
+                </Button>
+                <Button onClick={handleSignUpOpen} color="inherit" sx={{ mr: 2 }}>
+                  Register
+                </Button>
+              </>
+            ) : (
+              <>
+                <Typography color="inherit" sx={{ mr: 2 }}>
+                  {currentMember}님, 환영합니다!
+                </Typography>
+                <IconButton
+                  edge="end"
+                  aria-label="account of current user"
+                  aria-controls={menuId}
+                  aria-haspopup="true"
+                  onClick={handleProfileMenuOpen}
+                  color="inherit"
+                >
+                  <AccountCircle />
+                </IconButton>
+              </>
+            )}
           </Toolbar>
         </AppBar>
         <Drawer variant="permanent">
@@ -275,41 +347,9 @@ export default function Dashboard() {
           />
           <Divider />
           <List component="nav">
-            {channels.map((channel) => (
-              <ListItemButton
-                key={channel.id}
-                onClick={() => handleChannelSelect(channel)}
-              >
-                <ListItemIcon>
-                  <ChatIcon />
-                </ListItemIcon>
-                <ListItemText primary={channel.name} />
-              </ListItemButton>
-            ))}
-            <ListItemButton onClick={handleAddChatChannel}>
-              <ListItemIcon>
-                <AddIcon />
-              </ListItemIcon>
-              <ListItemText primary="+ 채팅 채널 추가" />
-            </ListItemButton>
+            {mainListItems(channels, handleChannelSelect, handleAddChatChannel, handleContextMenu)}
             <Divider sx={{ my: 1 }} />
-            {voiceChannels.map((channel) => (
-              <ListItemButton
-                key={channel.id}
-                onClick={() => handleChannelSelect(channel)}
-              >
-                <ListItemIcon>
-                  <MicIcon />
-                </ListItemIcon>
-                <ListItemText primary={channel.name} />
-              </ListItemButton>
-            ))}
-            <ListItemButton onClick={handleAddVoiceChannel}>
-              <ListItemIcon>
-                <AddIcon />
-              </ListItemIcon>
-              <ListItemText primary="+ 음성 채널 추가" />
-            </ListItemButton>
+            {secondaryListItems(voiceChannels, handleChannelSelect, handleAddVoiceChannel, handleContextMenu)}
           </List>
         </Drawer>
         <Box
@@ -341,13 +381,13 @@ export default function Dashboard() {
                     height: "100%",
                   }}
                 >
-                  {selectedChannel.name.includes("채팅 채널") && (
+                  {selectedChannel.type === "chat" && (
                     <ChatChannel
                       channel={selectedChannel.name}
                       channelId={selectedChannel.id} // Pass channel ID
                     />
                   )}
-                  {selectedChannel.name.includes("음성 채널") && (
+                  {selectedChannel.type === "voice" && (
                     <VoiceChannel channelId={selectedChannel.id} />
                   )}
                 </Paper>
@@ -371,8 +411,7 @@ export default function Dashboard() {
 
       <Dialog open={loginOpen} onClose={handleLoginClose}>
         <DialogContent>
-          <Login onSignUpOpen={handleSignUpOpen} onClose={handleLoginClose} />{" "}
-          {/* onClose prop 추가 */}
+          <Login onSignUpOpen={handleSignUpOpen} onClose={handleLoginClose} onLogin={handleLogin} onFindPasswordOpen={handleFindPasswordOpen} /> {/* onFindPasswordOpen prop 추가 */}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleLoginClose} color="primary">
@@ -392,6 +431,17 @@ export default function Dashboard() {
         </DialogActions>
       </Dialog>
 
+      <Dialog open={findPasswordOpen} onClose={handleFindPasswordClose}>
+        <DialogContent>
+          <FindPassword onLoginOpen={handleLoginOpen} onClose={handleFindPasswordClose} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleFindPasswordClose} color="primary">
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Menu
         anchorEl={anchorEl}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
@@ -401,9 +451,53 @@ export default function Dashboard() {
         open={isMenuOpen}
         onClose={handleMenuClose}
       >
-        <MenuItem disabled>{`Username: po***@gmail.com`}</MenuItem>
+        <MenuItem disabled>{`Username: ${currentMember}`}</MenuItem>
         <MenuItem onClick={handleLogout}>Log Out</MenuItem>
       </Menu>
+
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleContextMenuClose}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        <MenuItem onClick={handleEditChannel}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="이름 변경하기" />
+        </MenuItem>
+        <MenuItem onClick={handleDeleteChannel}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="삭제하기" />
+        </MenuItem>
+      </Menu>
+
+      <Dialog open={editDialogOpen} onClose={handleEditDialogClose}>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="채널 이름"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={channelName}
+            onChange={handleChannelNameChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditDialogClose}>취소</Button>
+          <Button onClick={handleChannelNameSave}>저장</Button>
+        </DialogActions>
+      </Dialog>
     </ThemeProvider>
   );
 }
