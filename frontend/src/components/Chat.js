@@ -177,7 +177,12 @@ const ChatChannel = ({ channel, channelId }) => {
               </Button>
             </>
           ) : (
-            <Typography variant="body1" color="textSecondary" align="center" sx={{ flexGrow: 1 }}>
+            <Typography
+              variant="body1"
+              color="textSecondary"
+              align="center"
+              sx={{ flexGrow: 1 }}
+            >
               로그인 후 이용해주세요
             </Typography>
           )}
