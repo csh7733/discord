@@ -48,6 +48,9 @@ import TextField from "@mui/material/TextField";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ChannelList from "./ChannelList";
+import { Stomp } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
 
 function Copyright(props) {
   return (
@@ -96,35 +99,42 @@ export default function Dashboard() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [signUpOpen, setSignUpOpen] = useState(false);
   const [findPasswordOpen, setFindPasswordOpen] = useState(false); // 비밀번호 찾기 모달 상태 추가
-  const chatChannelIdRef = useRef(3);
-  const voiceChannelIdRef = useRef(3);
-  const [selectedChannel, setSelectedChannel] = useState({
-    id: 1,
-    key: "channel1",
-    name: "채팅 채널 1",
-    type: "chat",
-  }); // 현재 선택된 채널을 관리하는 상태
-  const { currentMember, isLoading, error, currentUserMutate } = useCurrentMember(); // useCurrentMember 훅 사용
-  const [channels, setChannels] = useState([
-    {
-      id: 1,
-      key: "channel1",
-      name: "채팅 채널 1",
-      messages: [],
-      type: "chat",
-    },
-    {
-      id: 2,
-      key: "channel2",
-      name: "채팅 채널 2",
-      messages: [],
-      type: "chat",
-    },
-  ]); // 채널 목록을 관리하는 상태
-  const [voiceChannels, setVoiceChannels] = useState([
-    { id: 1, key: "voice1", name: "음성 채널 1", type: "voice" },
-    { id: 2, key: "voice2", name: "음성 채널 2", type: "voice" },
-  ]); // 음성 채널 목록을 관리하는 상태
+
+  const [stompClient, setStompClient] = useState(null);
+
+  React.useEffect(() => {
+    const socket = new SockJS("http://localhost:8080/ws");
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, () => {
+      stompClient.subscribe("/topic/channels", (message) => {
+        const updatedChannels = JSON.parse(message.body);
+
+        const chatChannels = updatedChannels
+          .filter((channel) => channel.type === "chat")
+          .sort((a, b) => (a.id > b.id ? 1 : -1));
+
+        const voiceChannels = updatedChannels
+          .filter((channel) => channel.type === "voice")
+          .sort((a, b) => (a.id > b.id ? 1 : -1));
+        setChannels(chatChannels);
+        setVoiceChannels(voiceChannels);
+      });
+
+      stompClient.send("/app/channels", {}, {});
+      setStompClient(stompClient);
+    });
+
+    return () => {
+      stompClient.disconnect();
+    };
+  }, []);
+
+  const [selectedChannel, setSelectedChannel] = useState(null); // 현재 선택된 채널을 관리하는 상태
+  const { currentMember, isLoading, error, currentUserMutate } =
+    useCurrentMember(); // useCurrentMember 훅 사용
+  const [channels, setChannels] = useState([]); // 채널 목록을 관리하는 상태
+  const [voiceChannels, setVoiceChannels] = useState([]); // 음성 채널 목록을 관리하는 상태
   const [anchorEl, setAnchorEl] = useState(null);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -134,6 +144,8 @@ export default function Dashboard() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [channelToEdit, setChannelToEdit] = useState(null);
   const [channelName, setChannelName] = useState("");
+
+  const userListRef = useRef();
 
   React.useEffect(() => {
     setSnackbarOpen(true);
@@ -183,25 +195,36 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     // 로컬 스토리지에서 토큰 삭제
+    const username = currentMember;
     localStorage.removeItem("token");
 
     // SWR의 캐시에서 currentMember 삭제
     currentUserMutate(null, false);
     handleMenuClose();
+
+    // Remove user from the UserList
+    if (userListRef.current) {
+      userListRef.current.handleRemoveUser(username);
+    }
   };
 
   const handleLogin = async () => {
-    currentUserMutate();
+    const name = await currentUserMutate();
 
     handleLoginClose();
+
+    // Add user to the UserList
+    if (userListRef.current) {
+      userListRef.current.handleAddUser(name);
+    }
   };
 
   const isMenuOpen = Boolean(anchorEl);
   const menuId = "primary-search-account-menu";
 
   const handleAddChatChannel = () => {
-    const newChannelId = chatChannelIdRef.current;
-    chatChannelIdRef.current += 1; // 다음에 사용할 ID 증가
+    const newChannelId =
+      channels.length > 0 ? channels[channels.length - 1].id + 1 : 1;
     const newChannel = {
       id: newChannelId,
       key: `chat${newChannelId}`, // 채팅 채널 ID를 고유하게 변경
@@ -209,18 +232,25 @@ export default function Dashboard() {
       messages: [],
       type: "chat",
     };
+
+    stompClient.send("/app/addChannel", {}, JSON.stringify(newChannel));
     setChannels([...channels, newChannel]);
   };
 
   const handleAddVoiceChannel = () => {
-    const newChannelId = voiceChannelIdRef.current;
-    voiceChannelIdRef.current += 1; // 다음에 사용할 ID 증가
+    const newChannelId =
+      voiceChannels.length > 0
+        ? voiceChannels[voiceChannels.length - 1].id + 1
+        : 1;
+
     const newChannel = {
       id: newChannelId,
       key: `voice${newChannelId}`, // 음성 채널 ID를 고유하게 변경
       name: `음성 채널 ${newChannelId}`,
       type: "voice",
     };
+
+    stompClient.send("/app/addChannel", {}, JSON.stringify(newChannel));
     setVoiceChannels([...voiceChannels, newChannel]);
   };
 
@@ -234,7 +264,7 @@ export default function Dashboard() {
             mouseY: event.clientY - 4,
             channel,
           }
-        : null,
+        : null
     );
   };
 
@@ -250,14 +280,15 @@ export default function Dashboard() {
   };
 
   const handleDeleteChannel = () => {
+    stompClient.send("/app/removeChannel", {}, contextMenu.channel.key);
     if (contextMenu.channel.type === "chat") {
       const newChannels = channels.filter(
-        (channel) => channel.id !== contextMenu.channel.id,
+        (channel) => channel.id !== contextMenu.channel.id
       );
       setChannels(newChannels);
     } else {
       const newVoiceChannels = voiceChannels.filter(
-        (channel) => channel.id !== contextMenu.channel.id,
+        (channel) => channel.id !== contextMenu.channel.id
       );
       setVoiceChannels(newVoiceChannels);
     }
@@ -273,18 +304,23 @@ export default function Dashboard() {
   };
 
   const handleChannelNameSave = () => {
+    stompClient.send(
+      "/app/updateChannel",
+      {},
+      JSON.stringify({ ...channelToEdit, name: channelName })
+    );
     if (channelToEdit.type === "chat") {
       const newChannels = channels.map((channel) =>
         channel.id === channelToEdit.id
           ? { ...channel, name: channelName }
-          : channel,
+          : channel
       );
       setChannels(newChannels);
     } else {
       const newVoiceChannels = voiceChannels.map((channel) =>
         channel.id === channelToEdit.id
           ? { ...channel, name: channelName }
-          : channel,
+          : channel
       );
       setVoiceChannels(newVoiceChannels);
     }
@@ -310,10 +346,18 @@ export default function Dashboard() {
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} />
             {!currentMember ? (
               <>
-                <Button onClick={handleLoginOpen} color="inherit" sx={{ mr: 2 }}>
+                <Button
+                  onClick={handleLoginOpen}
+                  color="inherit"
+                  sx={{ mr: 2 }}
+                >
                   Log In
                 </Button>
-                <Button onClick={handleSignUpOpen} color="inherit" sx={{ mr: 2 }}>
+                <Button
+                  onClick={handleSignUpOpen}
+                  color="inherit"
+                  sx={{ mr: 2 }}
+                >
                   Register
                 </Button>
               </>
@@ -347,9 +391,19 @@ export default function Dashboard() {
           />
           <Divider />
           <List component="nav">
-            {mainListItems(channels, handleChannelSelect, handleAddChatChannel, handleContextMenu)}
+            {mainListItems(
+              channels,
+              handleChannelSelect,
+              handleAddChatChannel,
+              handleContextMenu
+            )}
             <Divider sx={{ my: 1 }} />
-            {secondaryListItems(voiceChannels, handleChannelSelect, handleAddVoiceChannel, handleContextMenu)}
+            {secondaryListItems(
+              voiceChannels,
+              handleChannelSelect,
+              handleAddVoiceChannel,
+              handleContextMenu
+            )}
           </List>
         </Drawer>
         <Box
@@ -367,6 +421,7 @@ export default function Dashboard() {
           }}
         >
           <Toolbar />
+
           <Container
             maxWidth="lg"
             sx={{ mt: 4, mb: 4, display: "flex", flexGrow: 1 }}
@@ -381,19 +436,32 @@ export default function Dashboard() {
                     height: "100%",
                   }}
                 >
-                  {selectedChannel.type === "chat" && (
-                    <ChatChannel
-                      channel={selectedChannel.name}
-                      channelId={selectedChannel.id} // Pass channel ID
-                    />
-                  )}
-                  {selectedChannel.type === "voice" && (
-                    <VoiceChannel channelId={selectedChannel.id} />
+                  {selectedChannel ? (
+                    <>
+                      {selectedChannel.type === "chat" && (
+                        <ChatChannel
+                          channel={selectedChannel.name}
+                          channelId={selectedChannel.id} // Pass channel ID
+                        />
+                      )}
+                      {selectedChannel.type === "voice" && (
+                        <VoiceChannel channelId={selectedChannel.id} />
+                      )}
+                    </>
+                  ) : (
+                    <Typography
+                      variant="h6"
+                      color="inherit"
+                      noWrap
+                      sx={{ p: 2 }}
+                    >
+                      No channel selected{" "}
+                    </Typography>
                   )}
                 </Paper>
               </Grid>
               <Grid item xs={3} sx={{ height: "100%" }}>
-                <UserList />
+                <UserList ref={userListRef} />
               </Grid>
             </Grid>
           </Container>
@@ -411,7 +479,13 @@ export default function Dashboard() {
 
       <Dialog open={loginOpen} onClose={handleLoginClose}>
         <DialogContent>
-          <Login onSignUpOpen={handleSignUpOpen} onClose={handleLoginClose} onLogin={handleLogin} onFindPasswordOpen={handleFindPasswordOpen} /> {/* onFindPasswordOpen prop 추가 */}
+          <Login
+            onSignUpOpen={handleSignUpOpen}
+            onClose={handleLoginClose}
+            onLogin={handleLogin}
+            onFindPasswordOpen={handleFindPasswordOpen}
+          />{" "}
+          {/* onFindPasswordOpen prop 추가 */}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleLoginClose} color="primary">
@@ -433,7 +507,10 @@ export default function Dashboard() {
 
       <Dialog open={findPasswordOpen} onClose={handleFindPasswordClose}>
         <DialogContent>
-          <FindPassword onLoginOpen={handleLoginOpen} onClose={handleFindPasswordClose} />
+          <FindPassword
+            onLoginOpen={handleLoginOpen}
+            onClose={handleFindPasswordClose}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleFindPasswordClose} color="primary">
