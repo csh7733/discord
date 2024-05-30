@@ -14,7 +14,7 @@ import {
 const VideoChatting = ({ userId, channelId }) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const pc = useRef(null);
+  const pc = useRef(new RTCPeerConnection());
   const stompClient = useRef(null);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -22,6 +22,7 @@ const VideoChatting = ({ userId, channelId }) => {
 
   const handleIceCandidate = useCallback(
     (event) => {
+      console.log("handleIceCandidate called", event);
       if (event.candidate) {
         console.log("ICE 후보 전송", event.candidate);
         stompClient.current.send(
@@ -31,7 +32,6 @@ const VideoChatting = ({ userId, channelId }) => {
             type: "CANDIDATE",
             candidate: event.candidate,
             origin: userId,
-            userId,
             channelId,
           })
         );
@@ -53,6 +53,7 @@ const VideoChatting = ({ userId, channelId }) => {
       console.log("ICE Connection Established");
     }
   }, []);
+
 
   useEffect(() => {
     // PeerConnection 초기화 및 이벤트 리스너 추가
@@ -157,7 +158,7 @@ const VideoChatting = ({ userId, channelId }) => {
       if (data.sdp) {
         console.log("SDP 메시지 수신", data.sdp);
         handleRemoteDescription(data.sdp);
-      } else if (data.candidate && data.origin !== userId) {
+      } else if (data.candidate) { // 조건 수정: data.origin !== userId 조건 제거
         console.log("ICE 후보 수신", data.candidate);
         handleRemoteCandidate(data.candidate);
       }
@@ -181,25 +182,6 @@ const VideoChatting = ({ userId, channelId }) => {
       userId: userId,
       targetUserId: targetUserId,
       channelId: channelId,
-    };
-    // setLocalDescription 완료 후 SDP 메시지 전송
-    pc.current.onicecandidate = (event) => {
-      if (event.candidate) {
-        console.log("ICE 후보 전송", event.candidate);
-        stompClient.current.send(
-          `/app/channel/${channelId}/ice-candidate`,
-          {},
-          JSON.stringify({
-            type: "CANDIDATE",
-            candidate: event.candidate,
-            origin: userId,
-            userId,
-            channelId,
-          })
-        );
-      } else {
-        console.log("ICE 후보 탐색 완료");
-      }
     };
     stompClient.current.send(
       `/app/channel/${channelId}/sdp`,
@@ -233,6 +215,7 @@ const VideoChatting = ({ userId, channelId }) => {
     }
 
     // 임시 저장된 ICE 후보 추가
+    console.log("임시 저장된 ICE 후보 추가 시도");
     iceCandidatesQueue.forEach(async (candidate) => {
       try {
         await pc.current.addIceCandidate(candidate);
@@ -245,7 +228,7 @@ const VideoChatting = ({ userId, channelId }) => {
   };
 
   const handleRemoteCandidate = async (candidate) => {
-    console.log("리모트 ICE 후보 추가", candidate);
+    console.log("리모트 ICE 후보 추가 시도", candidate);
 
     if (pc.current.remoteDescription) {
       try {
@@ -276,42 +259,28 @@ const VideoChatting = ({ userId, channelId }) => {
             style={styles.remoteUserLabel}
             component="div"
           >
-            User ID: {userId}
-          </Typography>
-          <Typography
-            variant="caption"
-            style={styles.videoLabel}
-            component="div"
-          >
-            Local Video
+            나
           </Typography>
         </Box>
-        <Box position="relative" ml={2}>
+        <Box position="relative">
           <video ref={remoteVideoRef} autoPlay style={styles.video} />
           <Typography
             variant="caption"
             style={styles.remoteUserLabel}
             component="div"
           >
-            Remote User ID:
-          </Typography>
-          <Typography
-            variant="caption"
-            style={styles.videoLabel}
-            component="div"
-          >
-            Remote Video
+            상대방
           </Typography>
         </Box>
       </Box>
-      <Paper elevation={3} style={styles.userList}>
-        <Typography variant="h6" gutterBottom>
-          Connected Users:
+      <Paper style={styles.userListPaper}>
+        <Typography variant="h6" align="center" gutterBottom>
+          사용자 목록
         </Typography>
         <List>
           {connectedUsers.map((user) => (
             <ListItem key={user}>
-              <ListItemText primary={user} />
+              <ListItemText primary={user === userId ? `${user} (나)` : user} />
             </ListItem>
           ))}
         </List>
@@ -322,30 +291,21 @@ const VideoChatting = ({ userId, channelId }) => {
 
 const styles = {
   video: {
-    width: "300px",
-    height: "200px",
-    borderRadius: "8px",
-    backgroundColor: "#000",
-  },
-  videoLabel: {
-    position: "absolute",
-    bottom: "10px",
-    left: "10px",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    color: "#fff",
-    padding: "2px 6px",
-    borderRadius: "4px",
+    width: "400px",
+    height: "300px",
+    backgroundColor: "black",
   },
   remoteUserLabel: {
     position: "absolute",
-    top: "10px",
-    left: "10px",
+    bottom: 8,
+    left: "50%",
+    transform: "translateX(-50%)",
+    color: "white",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    color: "#fff",
-    padding: "2px 6px",
+    padding: "2px 4px",
     borderRadius: "4px",
   },
-  userList: {
+  userListPaper: {
     padding: "16px",
   },
 };
