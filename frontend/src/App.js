@@ -1,7 +1,8 @@
-import React from 'react';
-import { Route, Routes, Navigate } from 'react-router-dom';
-import Dashboard from './components/Dashboard';
-import Test from './components/Test';
+import React from "react";
+import { Route, Routes, Navigate } from "react-router-dom";
+import Dashboard from "./components/Dashboard";
+import Test from "./components/singletest";
+import MultiTest from "./components/multitest";
 
 // 인증된 사용자만 접근 가능한 라우트 컴포넌트
 const PrivateRoute = ({ authenticated, element }) => {
@@ -9,15 +10,15 @@ const PrivateRoute = ({ authenticated, element }) => {
 };
 
 function App() {
-  const isAuthenticated = localStorage.getItem('token') ? true : false;
+  const isAuthenticated = localStorage.getItem("token") ? true : false;
 
   return (
     <Routes>
       <Route path="/" element={<Dashboard />} />
       <Route path="/test" element={<Test />} />
+      <Route path="/multi" element={<MultiTest />} />
     </Routes>
   );
 }
 
 export default App;
-
