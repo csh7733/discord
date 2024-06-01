@@ -49,6 +49,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ChannelList from "./ChannelList";
+import MicOffIcon from "@mui/icons-material/MicOff";
+import VideocamIcon from "@mui/icons-material/Videocam";
+import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import { Stomp } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { useLocation } from "react-router-dom";
@@ -100,17 +103,30 @@ export default function Dashboard() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [signUpOpen, setSignUpOpen] = useState(false);
   const [findPasswordOpen, setFindPasswordOpen] = useState(false); // 비밀번호 찾기 모달 상태 추가
+  const [isMuted, setIsMuted] = useState(() => {
+    const savedMuted = localStorage.getItem("isMuted");
+    return savedMuted ? JSON.parse(savedMuted) : false;
+  });
+
+  const [isVideoOff, setIsVideoOff] = useState(() => {
+    const savedVideoOff = localStorage.getItem("isVideoOff");
+    return savedVideoOff ? JSON.parse(savedVideoOff) : false;
+  });
   const voiceChannelRef = useRef();
   const location = useLocation();
 
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const channelId = params.get('channelId');
-    const channelName = params.get('channelName');
-    const channelType = params.get('channelType');
+    const channelId = params.get("channelId");
+    const channelName = params.get("channelName");
+    const channelType = params.get("channelType");
 
     if (channelId && channelName) {
-      setSelectedChannel({ id: channelId, name: channelName, type: channelType }); // Adjust this based on your channel type
+      setSelectedChannel({
+        id: channelId,
+        name: channelName,
+        type: channelType,
+      }); // Adjust this based on your channel type
     }
   }, [location]);
 
@@ -196,12 +212,16 @@ export default function Dashboard() {
   };
 
   const handleChannelSelect = (channel) => {
-    if (selectedChannel && selectedChannel.type === "voice" && voiceChannelRef.current) {
+    if (
+      selectedChannel &&
+      selectedChannel.type === "voice" &&
+      voiceChannelRef.current
+    ) {
       voiceChannelRef.current.handleLeave().then(() => {
         setTimeout(() => {
           window.location.href = `/?channelId=${channel.id}&channelName=${channel.name}&channelType=${channel.type}`;
         }, 20); // 20ms 대기 후 새로고침 및 이동
-      }); 
+      });
     } else {
       setSelectedChannel(channel);
     }
@@ -348,6 +368,20 @@ export default function Dashboard() {
     setEditDialogOpen(false);
   };
 
+  const toggleMute = () => {
+    setIsMuted((prev) => {
+      localStorage.setItem("isMuted", !prev);
+      return !prev;
+    });
+  };
+
+  const toggleVideo = () => {
+    setIsVideoOff((prev) => {
+      localStorage.setItem("isVideoOff", !prev);
+      return !prev;
+    });
+  };
+
   return (
     <ThemeProvider theme={discordTheme}>
       <Box sx={{ display: "flex", height: "100vh" }}>
@@ -426,7 +460,16 @@ export default function Dashboard() {
               handleContextMenu
             )}
           </List>
+          <Box sx={{ position: "fixed", bottom: 20, left: 20 }}>
+            <IconButton onClick={toggleMute} color="primary">
+              {isMuted ? <MicOffIcon /> : <MicIcon />}
+            </IconButton>
+            <IconButton onClick={toggleVideo} color="primary">
+              {isVideoOff ? <VideocamOffIcon /> : <VideocamIcon />}
+            </IconButton>
+          </Box>
         </Drawer>
+
         <Box
           component="main"
           sx={{
@@ -469,6 +512,8 @@ export default function Dashboard() {
                         <VoiceChannel
                           channel={selectedChannel.name}
                           channelId={selectedChannel.id}
+                          isMuted={isMuted}
+                          isVideoOff={isVideoOff}
                           ref={voiceChannelRef}
                         />
                       )}
