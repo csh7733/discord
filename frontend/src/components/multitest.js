@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { styled, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Container from "@mui/material/Container";
@@ -7,7 +7,6 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import discordTheme from "./Theme";
 import { useNavigate } from "react-router-dom"; // 메인 홈페이지로 이동을 위해 useNavigate 사용
-import { useCurrentMember } from "../hooks/useCurrentMember";
 
 const VideoContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -30,7 +29,7 @@ const VideoContainer = styled("div")(({ theme }) => ({
   },
 }));
 
-const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
+function MultiTest({ channelId }) { // channelId를 props로 받습니다.
   const localVideoRef = useRef(null);
   const remoteVideoRefs = useRef({});
   const localStreamRef = useRef(null);
@@ -43,17 +42,9 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
   const [isStreamReady, setIsStreamReady] = useState(false);
   const [isOfferer, setIsOfferer] = useState(false);
   const navigate = useNavigate(); // useNavigate 훅 사용
-  const { currentMember, currentUserMutate, isLoading } = useCurrentMember(); // 현재 사용자 정보 가져오기
-  const [usernameMap, setUsernameMap] = useState({});
-  const usernameMapRef = useRef({}); // useRef로 usernameMap 생성
-  const myName = useRef(null);
 
   const sessionMapRef = useRef({});
   const nextSessionNumberRef = useRef(1);
-
-  useImperativeHandle(ref, () => ({
-    handleLeave,
-  }));
 
   const call = useCallback(async () => {
     console.log("Call function called");
@@ -63,11 +54,10 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
           type: "join",
           source: sessionIdRef.current,
           target: "all",
-          username : myName.current,
           channelId, // 메시지에 channelId 포함
         })
       );
-      console.log("Join sent:", myName);
+      console.log("Join sent:", channelId);
     }
   }, [channelId]);
 
@@ -103,21 +93,14 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
   }, [sessionId]);
 
   useEffect(() => {
-    const initiateCall = async () => {
-      await currentUserMutate(); // currentMember를 최신 상태로 갱신
-      if (isConnected && sessionId && isStreamReady && currentMember) {
-        console.log("hello! name = " + currentMember);
-        console.log("All conditions met, ready to start signaling...");
-        if (isOfferer) {
-          console.log("Starting call as offerer...");
-          myName.current = currentMember;
-          call();
-        }
+    if (isConnected && sessionId && isStreamReady) {
+      console.log("All conditions met, ready to start signaling...");
+      if (isOfferer) {
+        console.log("Starting call as offerer...");
+        call();
       }
-    };
-
-    initiateCall();
-  }, [isConnected, sessionId, isStreamReady, isOfferer, call, currentMember]);
+    }
+  }, [isConnected, sessionId, isStreamReady, isOfferer, call]);
 
   const connectWebSocket = () => {
     const newSocket = new WebSocket(`ws://localhost:8080/socket?channelId=${channelId}`); // channelId 포함
@@ -175,11 +158,6 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
   const handleJoin = async (data) => {
     console.log("Handling join:", data);
     const sourceId = data.source;
-    setUsernameMap((prev) => {
-      const updatedMap = { ...prev, [sourceId]: data.username };
-      usernameMapRef.current = updatedMap; // useRef로 업데이트
-      return updatedMap;
-    });
     const newPeerConnection = await createPeerConnection(
       getSessionNumber(sourceId),
       sourceId
@@ -199,7 +177,6 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
             sdp: offer.sdp,
             source: sessionIdRef.current,
             target: sourceId,
-            username: myName.current,
             channelId, // 메시지에 channelId 포함
           })
         );
@@ -212,11 +189,6 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
 
   const handleOffer = async (data) => {
     console.log("Handling offer:", data);
-    setUsernameMap((prev) => {
-      const updatedMap = { ...prev, [data.source]: data.username };
-      usernameMapRef.current = updatedMap; // useRef로 업데이트
-      return updatedMap;
-    });
     const sessionNumber = getSessionNumber(data.source);
     const newPeerConnection = await createPeerConnection(
       sessionNumber,
@@ -243,7 +215,6 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
               sdp: answer.sdp,
               source: sessionIdRef.current,
               target: data.source,
-              username: myName.current, // 현재 사용자 이름 포함
               channelId, // 메시지에 channelId 포함
             })
           );
@@ -265,11 +236,6 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
   const handleAnswer = async (data) => {
     console.log("Handling answer:", data);
     const sessionNumber = getSessionNumber(data.source);
-    setUsernameMap((prev) => {
-      const updatedMap = { ...prev, [data.source]: data.username };
-      usernameMapRef.current = updatedMap; // useRef로 업데이트
-      return updatedMap;
-    });
     if (peerConnectionsRef.current[sessionNumber]) {
       if (
         peerConnectionsRef.current[sessionNumber].signalingState !==
@@ -344,10 +310,7 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
 
         const sessionIdElement = document.createElement("div");
         sessionIdElement.className = "session-id";
-        sessionIdElement.innerText = usernameMapRef.current[sourceId]; // useRef로부터 가져오기
-
-        console.log("source Id = " + sourceId);
-        console.log("name : " + usernameMapRef.current[sourceId]);
+        sessionIdElement.innerText = sourceId;
 
         videoContainer.appendChild(videoElement);
         videoContainer.appendChild(sessionIdElement);
@@ -369,50 +332,46 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
   };
 
   const handleLeave = () => {
-    return new Promise((resolve) => {
-      if (socketRef.current) {
-        socketRef.current.send(
-          JSON.stringify({
-            type: "leave",
-            source: sessionIdRef.current,
-            target: "all",
-            channelId,
-          })
-        );
-        socketRef.current.close();
-      }
+    if (socketRef.current) {
+      socketRef.current.send(
+        JSON.stringify({
+          type: "leave",
+          source: sessionIdRef.current,
+          target: "all",
+          channelId, // 메시지에 channelId 포함
+        })
+      );
+    }
 
-      // 모든 피어 연결 끊기
-      Object.values(peerConnectionsRef.current).forEach((peerConnection) => {
-        peerConnection.close();
-      });
-
-      // 모든 비디오 요소 제거
-      Object.values(remoteVideoRefs.current).forEach((videoElement) => {
-        const sessionIdElement = videoElement.parentNode.querySelector('.session-id');
-        if (videoElement.parentNode) {
-          if (sessionIdElement) {
-            sessionIdElement.parentNode.removeChild(sessionIdElement);
-          }
-          videoElement.parentNode.removeChild(videoElement);
-        }
-      });
-
-      // 로컬 비디오 요소 제거
-      if (localVideoRef.current && localVideoRef.current.srcObject) {
-        localVideoRef.current.srcObject.getTracks().forEach((track) => {
-          track.stop();
-        });
-        localVideoRef.current.srcObject = null;
-      }
-
-      peerConnectionsRef.current = {};
-      remoteVideoRefs.current = {};
-      iceCandidatesBufferRef.current = {};
-      usernameMapRef.current = {};
-
-      resolve();
+    // 모든 피어 연결 끊기
+    Object.values(peerConnectionsRef.current).forEach((peerConnection) => {
+      peerConnection.close();
     });
+
+    // 모든 비디오 요소 제거
+    Object.values(remoteVideoRefs.current).forEach((videoElement) => {
+      const sessionIdElement = videoElement.parentNode.querySelector('.session-id');
+      if (videoElement.parentNode) {
+        if (sessionIdElement) {
+          sessionIdElement.parentNode.removeChild(sessionIdElement);
+        }
+        videoElement.parentNode.removeChild(videoElement);
+      }
+    });
+
+    // 로컬 비디오 요소 제거
+    if (localVideoRef.current && localVideoRef.current.srcObject) {
+      localVideoRef.current.srcObject.getTracks().forEach((track) => {
+        track.stop();
+      });
+      localVideoRef.current.srcObject = null;
+    }
+
+    peerConnectionsRef.current = {};
+    remoteVideoRefs.current = {};
+    iceCandidatesBufferRef.current = {};
+
+    navigate("/"); // 메인 홈페이지로 이동
   };
 
   const handleRemoteLeave = (data) => {
@@ -449,18 +408,21 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
       <Container>
         <Box sx={{ my: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            {channel}
+            WebRTC Video Chat
           </Typography>
           <VideoContainer id="video-grid">
             <div style={{ position: "relative" }}>
               <video ref={localVideoRef} autoPlay playsInline muted />
-              <div className="session-id">{currentMember} (나)</div>
+              <div className="session-id">{sessionId} (나)</div>
             </div>
           </VideoContainer>
+          <Button variant="contained" color="secondary" onClick={handleLeave}>
+            나가기
+          </Button>
         </Box>
       </Container>
     </ThemeProvider>
   );
-});
+}
 
-export default VoiceChannel;
+export default MultiTest;

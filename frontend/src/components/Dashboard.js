@@ -51,6 +51,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ChannelList from "./ChannelList";
 import { Stomp } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { useLocation } from "react-router-dom";
 
 function Copyright(props) {
   return (
@@ -99,6 +100,19 @@ export default function Dashboard() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [signUpOpen, setSignUpOpen] = useState(false);
   const [findPasswordOpen, setFindPasswordOpen] = useState(false); // 비밀번호 찾기 모달 상태 추가
+  const voiceChannelRef = useRef();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const channelId = params.get('channelId');
+    const channelName = params.get('channelName');
+    const channelType = params.get('channelType');
+
+    if (channelId && channelName) {
+      setSelectedChannel({ id: channelId, name: channelName, type: channelType }); // Adjust this based on your channel type
+    }
+  }, [location]);
 
   const [stompClient, setStompClient] = useState(null);
 
@@ -182,9 +196,16 @@ export default function Dashboard() {
   };
 
   const handleChannelSelect = (channel) => {
-    setSelectedChannel(channel);
+    if (selectedChannel && selectedChannel.type === "voice" && voiceChannelRef.current) {
+      voiceChannelRef.current.handleLeave().then(() => {
+        setTimeout(() => {
+          window.location.href = `/?channelId=${channel.id}&channelName=${channel.name}&channelType=${channel.type}`;
+        }, 20); // 20ms 대기 후 새로고침 및 이동
+      }); 
+    } else {
+      setSelectedChannel(channel);
+    }
   };
-
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -445,7 +466,11 @@ export default function Dashboard() {
                         />
                       )}
                       {selectedChannel.type === "voice" && (
-                        <VoiceChannel channelId={selectedChannel.id} />
+                        <VoiceChannel
+                          channel={selectedChannel.name}
+                          channelId={selectedChannel.id}
+                          ref={voiceChannelRef}
+                        />
                       )}
                     </>
                   ) : (
