@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Java 11 or higher
+- Java 17 or higher
 
 ## Getting Started
 
