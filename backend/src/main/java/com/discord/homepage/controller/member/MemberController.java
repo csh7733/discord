@@ -41,7 +41,7 @@ public class MemberController {
     }
 
     @PostMapping("/password/change")
-    public ResponseEntity<String> login(@RequestBody RequestChangePasswordDto requestChangePasswordDto) {
+    public ResponseEntity<String> changePassword(@RequestBody RequestChangePasswordDto requestChangePasswordDto) {
         String currentPassword = requestChangePasswordDto.getCurrentPassword();
         String newPassword = requestChangePasswordDto.getNewPassword();
         String confirmNewPassword = requestChangePasswordDto.getConfirmNewPassword();
@@ -66,6 +66,12 @@ public class MemberController {
         return ResponseEntity.ok("Password changed successfully");
     }
 
+    @PostMapping("/account/delete")
+    public ResponseEntity<String> deleteAccount() {
 
+        String username = getCurrentMember().getUsername();
+        memberService.deleteByUsername(username);
 
+        return ResponseEntity.ok("Delete Account Success!");
+    }
 }

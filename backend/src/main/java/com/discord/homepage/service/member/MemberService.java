@@ -13,4 +13,5 @@ public interface MemberService {
     public Optional<Member> findMemberByEmail(String email);
     public Optional<Member> findByPassword(String password);
     public boolean changePassword(String email, String currentPassword, String newPassword);
+    public void deleteByUsername(String username);
 }

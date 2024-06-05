@@ -55,6 +55,7 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import { Stomp } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import apiClient from "../apiClient";
 import { useLocation } from "react-router-dom";
 
 function Copyright(props) {
@@ -229,6 +230,17 @@ export default function Dashboard() {
     setDeleteAccountOpen(false);
   };
     
+  const handleDeleteAccountConfirm = async () => {
+    try {
+      await apiClient.post("/account/delete", {
+      });
+      // 계정 삭제 후 로그아웃 처리
+      handleLogout();
+    } catch (error) {
+      console.error("Account deletion failed", error);
+      setDeleteAccountOpen(false);
+    }
+  };  
 
   const handleChannelSelect = (channel) => {
     if (selectedChannel && selectedChannel.type === "voice" && voiceChannelRef.current) {
@@ -681,14 +693,18 @@ export default function Dashboard() {
 
       <Dialog open={deleteAccountOpen} onClose={handleDeleteAccountClose}>
         <DialogContent>
-          <Typography>Account deletion is not allowed.</Typography>
+          <Typography>Are you sure you want to delete your account? This action cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteAccountClose} color="primary">
             Cancel
           </Button>
+          <Button onClick={handleDeleteAccountConfirm} color="primary">
+            Confirm
+          </Button>
         </DialogActions>
       </Dialog>
+
 
     </ThemeProvider>
   );
