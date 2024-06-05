@@ -6,6 +6,7 @@ import Test from './components/ChangePassword';
 
 import { useParams } from 'react-router-dom';
 
+
 // 인증된 사용자만 접근 가능한 라우트 컴포넌트
 const PrivateRoute = ({ authenticated, element }) => {
   return authenticated ? element : <Navigate to="/login" />;
@@ -17,7 +18,7 @@ function TestWrapper() {
 }
 
 function App() {
-  const isAuthenticated = localStorage.getItem('token') ? true : false;
+  const isAuthenticated = localStorage.getItem("token") ? true : false;
 
   return (
     <Routes>

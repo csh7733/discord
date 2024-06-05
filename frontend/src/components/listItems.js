@@ -1,15 +1,20 @@
-import * as React from 'react';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText'; // 경로 수정
-import ListSubheader from '@mui/material/ListSubheader';
-import ChatIcon from '@mui/icons-material/Chat';
-import MicIcon from '@mui/icons-material/Mic';
-import AddIcon from '@mui/icons-material/Add';
-import IconButton from '@mui/material/IconButton';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import * as React from "react";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText"; // 경로 수정
+import ListSubheader from "@mui/material/ListSubheader";
+import ChatIcon from "@mui/icons-material/Chat";
+import MicIcon from "@mui/icons-material/Mic";
+import AddIcon from "@mui/icons-material/Add";
+import IconButton from "@mui/material/IconButton";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 
-export const mainListItems = (channels, handleChannelSelect, handleAddChannel, handleContextMenu) => (
+export const mainListItems = (
+  channels,
+  handleChannelSelect,
+  handleAddChannel,
+  handleContextMenu
+) => (
   <React.Fragment>
     <ListSubheader component="div" inset>
       채팅 채널
@@ -28,7 +33,10 @@ export const mainListItems = (channels, handleChannelSelect, handleAddChannel, h
           aria-label="more"
           aria-controls="long-menu"
           aria-haspopup="true"
-          onClick={(event) => handleContextMenu(event, channel)}
+          onClick={(event) => {
+            event.stopPropagation(); // 이벤트 전파 막기
+            handleContextMenu(event, channel);
+          }}
         >
           <MoreVertIcon />
         </IconButton>
@@ -43,7 +51,12 @@ export const mainListItems = (channels, handleChannelSelect, handleAddChannel, h
   </React.Fragment>
 );
 
-export const secondaryListItems = (voiceChannels, handleChannelSelect, handleAddVoiceChannel, handleContextMenu) => (
+export const secondaryListItems = (
+  voiceChannels,
+  handleChannelSelect,
+  handleAddVoiceChannel,
+  handleContextMenu
+) => (
   <React.Fragment>
     <ListSubheader component="div" inset>
       음성 채널
@@ -62,7 +75,10 @@ export const secondaryListItems = (voiceChannels, handleChannelSelect, handleAdd
           aria-label="more"
           aria-controls="long-menu"
           aria-haspopup="true"
-          onClick={(event) => handleContextMenu(event, channel)}
+          onClick={(event) => {
+            event.stopPropagation(); // 이벤트 전파 막기
+            handleContextMenu(event, channel);
+          }}
         >
           <MoreVertIcon />
         </IconButton>
