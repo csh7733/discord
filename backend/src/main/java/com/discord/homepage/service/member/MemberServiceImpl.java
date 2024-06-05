@@ -52,4 +52,9 @@ public class MemberServiceImpl implements MemberService{
         return updatedCount > 0;
     }
 
+    @Override
+    public void deleteByUsername(String username) {
+        memberRepository.deleteByUsername(username);
+    }
+
 }

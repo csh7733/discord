@@ -20,4 +20,7 @@ public interface MemberRepository extends JpaRepository<Member,Long> {
     @Query("UPDATE Member m SET m.password = :newPassword WHERE m.email = :email AND m.password = :currentPassword")
     int updatePassword(@Param("email") String email, @Param("currentPassword") String currentPassword, @Param("newPassword") String newPassword);
 
+    @Modifying
+    @Query("DELETE FROM Member m WHERE m.username = :username")
+    int deleteByUsername(@Param("username") String username);
 }
