@@ -41,4 +41,15 @@ public class MemberServiceImpl implements MemberService{
         return memberRepository.findByEmail(email);
     }
 
+    @Override
+    public Optional<Member> findByPassword(String password) {
+        return memberRepository.findByPassword(password);
+    }
+
+    @Override
+    public boolean changePassword(String email, String currentPassword, String newPassword) {
+        int updatedCount = memberRepository.updatePassword(email, currentPassword, newPassword);
+        return updatedCount > 0;
+    }
+
 }

@@ -6,7 +6,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import discordTheme from "./Theme";
-import { useNavigate } from "react-router-dom"; // 메인 홈페이지로 이동을 위해 useNavigate 사용
+import { useNavigate,useLocation } from "react-router-dom"; // 메인 홈페이지로 이동을 위해 useNavigate 사용
 import { useCurrentMember } from "../hooks/useCurrentMember";
 
 const VideoContainer = styled("div")(({ theme }) => ({
@@ -31,6 +31,7 @@ const VideoContainer = styled("div")(({ theme }) => ({
 }));
 
 const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
+  const location = useLocation();
   const localVideoRef = useRef(null);
   const remoteVideoRefs = useRef({});
   const localStreamRef = useRef(null);
@@ -90,7 +91,15 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
     getUserMedia();
     connectWebSocket();
 
+    // 사용자가 페이지를 떠나거나 브라우저를 닫을 때 처리
+    const handleBeforeUnload = (event) => {
+      handleLeave();  // handleLeave 함수 호출
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       if (socketRef.current) {
         socketRef.current.close();
       }
@@ -452,15 +461,24 @@ const VoiceChannel = forwardRef(({ channel, channelId }, ref) => {
             {channel}
           </Typography>
           <VideoContainer id="video-grid">
-            <div style={{ position: "relative" }}>
-              <video ref={localVideoRef} autoPlay playsInline muted />
-              <div className="session-id">{currentMember} (나)</div>
-            </div>
+            {currentMember ? (
+              <>
+                <div style={{ position: "relative" }}>
+                  <video ref={localVideoRef} autoPlay playsInline muted />
+                  <div className="session-id">{currentMember} (나)</div>
+                </div>
+              </>
+            ) : (
+              <Typography variant="h6" component="p" color="error">
+                로그인 후 이용해 주세요
+              </Typography>
+            )}
           </VideoContainer>
         </Box>
       </Container>
     </ThemeProvider>
   );
+  
 });
 
 export default VoiceChannel;

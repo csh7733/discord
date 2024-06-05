@@ -24,6 +24,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import AddIcon from "@mui/icons-material/Add";
 import MicIcon from "@mui/icons-material/Mic";
 import ListItemButton from "@mui/material/ListItemButton";
+import ChangePassword from "./ChangePassword";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import { mainListItems, secondaryListItems } from "./listItems";
@@ -100,17 +101,19 @@ export default function Dashboard() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [signUpOpen, setSignUpOpen] = useState(false);
   const [findPasswordOpen, setFindPasswordOpen] = useState(false); // 비밀번호 찾기 모달 상태 추가
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const voiceChannelRef = useRef();
   const location = useLocation();
 
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
     const channelId = params.get('channelId');
-    const channelName = params.get('channelName');
+    const voiceChannelName = params.get('channelName');
     const channelType = params.get('channelType');
 
-    if (channelId && channelName) {
-      setSelectedChannel({ id: channelId, name: channelName, type: channelType }); // Adjust this based on your channel type
+    if (channelId && voiceChannelName) {
+      setSelectedChannel({ id: channelId, name: voiceChannelName, type: channelType }); // Adjust this based on your channel type
     }
   }, [location]);
 
@@ -169,6 +172,7 @@ export default function Dashboard() {
     setLoginOpen(true);
     setSignUpOpen(false);
     setFindPasswordOpen(false); // 비밀번호 찾기 모달 닫기
+    setChangePasswordOpen(false);
   };
 
   const handleLoginClose = () => {
@@ -195,17 +199,35 @@ export default function Dashboard() {
     setFindPasswordOpen(false);
   };
 
+  const handleChangePasswordOpen = () => {
+    setChangePasswordOpen(true);
+    handleMenuClose(); // 현재 메뉴 닫기
+  };
+  
+  const handleChangePasswordClose = () => {
+    setChangePasswordOpen(false);
+  };
+
+  const handleDeleteAccountOpen = () => {
+    setDeleteAccountOpen(true);
+    handleMenuClose(); // 현재 메뉴 닫기
+  };
+  
+  const handleDeleteAccountClose = () => {
+    setDeleteAccountOpen(false);
+  };
+    
+
   const handleChannelSelect = (channel) => {
     if (selectedChannel && selectedChannel.type === "voice" && voiceChannelRef.current) {
-      voiceChannelRef.current.handleLeave().then(() => {
-        setTimeout(() => {
-          window.location.href = `/?channelId=${channel.id}&channelName=${channel.name}&channelType=${channel.type}`;
-        }, 20); // 20ms 대기 후 새로고침 및 이동
-      }); 
+      setTimeout(() => {
+        window.location.href = `/?channelId=${channel.id}&channelName=${channel.name}&channelType=${channel.type}`;
+      }, 20); // 20ms 대기 후 새로고침 및 이동
     } else {
       setSelectedChannel(channel);
     }
   };
+
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -218,15 +240,18 @@ export default function Dashboard() {
     // 로컬 스토리지에서 토큰 삭제
     const username = currentMember;
     localStorage.removeItem("token");
-
+  
     // SWR의 캐시에서 currentMember 삭제
     currentUserMutate(null, false);
     handleMenuClose();
-
+  
     // Remove user from the UserList
     if (userListRef.current) {
       userListRef.current.handleRemoveUser(username);
     }
+  
+    // 현재 URL로 새로고침
+    window.location.href = window.location.href;
   };
 
   const handleLogin = async () => {
@@ -544,6 +569,20 @@ export default function Dashboard() {
         </DialogActions>
       </Dialog>
 
+      <Dialog open={changePasswordOpen} onClose={handleChangePasswordClose}>
+        <DialogContent>
+          <ChangePassword 
+            onLoginOpen={handleLoginOpen}
+            onClose={handleChangePasswordClose}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleChangePasswordClose} color="primary">
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Menu
         anchorEl={anchorEl}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
@@ -554,7 +593,9 @@ export default function Dashboard() {
         onClose={handleMenuClose}
       >
         <MenuItem disabled>{`Username: ${currentMember}`}</MenuItem>
+        <MenuItem onClick={handleChangePasswordOpen}>Change Password</MenuItem>
         <MenuItem onClick={handleLogout}>Log Out</MenuItem>
+        <MenuItem onClick={handleDeleteAccountOpen}>Delete Account</MenuItem>
       </Menu>
 
       <Menu
@@ -600,6 +641,18 @@ export default function Dashboard() {
           <Button onClick={handleChannelNameSave}>저장</Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog open={deleteAccountOpen} onClose={handleDeleteAccountClose}>
+        <DialogContent>
+          <Typography>Account deletion is not allowed.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteAccountClose} color="primary">
+            Cancel
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </ThemeProvider>
   );
 }
