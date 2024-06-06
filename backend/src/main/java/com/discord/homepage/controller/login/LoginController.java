@@ -21,7 +21,7 @@ public class LoginController {
 
     private final MemberService memberService;
 
-    @PostMapping("/login")
+    @PostMapping("/sessions")
     public ResponseEntity<String> login(@RequestBody RequestLoginDto requestLoginDto) {
         Optional<Member> findMember = memberService.findMemberByEmail(requestLoginDto.getEmail());
         if (findMember.isEmpty()) {
@@ -40,7 +40,7 @@ public class LoginController {
         return ResponseEntity.ok(jwt);
     }
 
-    @PostMapping("/register")
+    @PostMapping("/users")
     public ResponseEntity<String> register(@RequestBody RequestRegisterDto requestRegisterDto) {
         Optional<Member> findMember = memberService.findMemberByEmail(requestRegisterDto.getEmail());
         // 이메일 중복 확인
@@ -54,7 +54,7 @@ public class LoginController {
         return ResponseEntity.ok("ok");
     }
 
-    @PostMapping("/login/find")
+    @PostMapping("/password-find")
     public ResponseEntity<String> findPassword(@RequestBody RequestFindPasswordDto requestFindPasswordDto) {
         Optional<Member> findMember = memberService.findMemberByUsernameAndEmail(
                 requestFindPasswordDto.getUsername(), requestFindPasswordDto.getEmail());

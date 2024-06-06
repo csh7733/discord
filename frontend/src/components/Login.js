@@ -27,7 +27,13 @@ function Copyright(props) {
   );
 }
 
-export default function Login({ onSignUpOpen, onClose, onLogin, onFindPasswordOpen }) { // onFindPasswordOpen 추가
+export default function Login({
+  onSignUpOpen,
+  onClose,
+  onLogin,
+  onFindPasswordOpen,
+}) {
+  // onFindPasswordOpen 추가
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const handleSubmit = async (e) => {
@@ -35,32 +41,31 @@ export default function Login({ onSignUpOpen, onClose, onLogin, onFindPasswordOp
     const data = new FormData(e.currentTarget);
     const { email, password } = Object.fromEntries(data.entries());
     try {
-        const response = await axios.post("/api/login", {
-            email,
-            password,
-        });
-        const jwt = response.data;
-        localStorage.setItem("token", jwt);
-        onClose(); // 로그인 모달 닫기
-        if (onLogin) {
-            onLogin(); // SWR 캐시 갱신
-        }
-        navigate("/");
+      const response = await axios.post("/api/sessions", {
+        email,
+        password,
+      });
+      const jwt = response.data;
+      localStorage.setItem("token", jwt);
+      onClose(); // 로그인 모달 닫기
+      if (onLogin) {
+        onLogin(); // SWR 캐시 갱신
+      }
+      navigate("/");
     } catch (error) {
-        if (error.response) {
-            if (error.response.status === 404) {
-                setError("User with this email not found");
-            } else if (error.response.status === 401) {
-                setError("Invalid password");
-            } else {
-                setError("An unexpected error occurred");
-            }
+      if (error.response) {
+        if (error.response.status === 404) {
+          setError("User with this email not found");
+        } else if (error.response.status === 401) {
+          setError("Invalid password");
         } else {
-            setError("Network error");
+          setError("An unexpected error occurred");
         }
+      } else {
+        setError("Network error");
+      }
     }
-};
-
+  };
 
   return (
     <Box

@@ -121,12 +121,16 @@ export default function Dashboard() {
 
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const channelId = params.get('channelId');
-    const voiceChannelName = params.get('channelName');
-    const channelType = params.get('channelType');
+    const channelId = params.get("channelId");
+    const voiceChannelName = params.get("channelName");
+    const channelType = params.get("channelType");
 
     if (channelId && voiceChannelName) {
-      setSelectedChannel({ id: channelId, name: voiceChannelName, type: channelType }); // Adjust this based on your channel type
+      setSelectedChannel({
+        id: channelId,
+        name: voiceChannelName,
+        type: channelType,
+      }); // Adjust this based on your channel type
     }
   }, [location]);
 
@@ -216,7 +220,7 @@ export default function Dashboard() {
     setChangePasswordOpen(true);
     handleMenuClose(); // 현재 메뉴 닫기
   };
-  
+
   const handleChangePasswordClose = () => {
     setChangePasswordOpen(false);
   };
@@ -225,25 +229,28 @@ export default function Dashboard() {
     setDeleteAccountOpen(true);
     handleMenuClose(); // 현재 메뉴 닫기
   };
-  
+
   const handleDeleteAccountClose = () => {
     setDeleteAccountOpen(false);
   };
-    
+
   const handleDeleteAccountConfirm = async () => {
     try {
-      await apiClient.post("/account/delete", {
-      });
+      await apiClient.delete("/users/me", {});
       // 계정 삭제 후 로그아웃 처리
       handleLogout();
     } catch (error) {
       console.error("Account deletion failed", error);
       setDeleteAccountOpen(false);
     }
-  };  
+  };
 
   const handleChannelSelect = (channel) => {
-    if (selectedChannel && selectedChannel.type === "voice" && voiceChannelRef.current) {
+    if (
+      selectedChannel &&
+      selectedChannel.type === "voice" &&
+      voiceChannelRef.current
+    ) {
       setTimeout(() => {
         window.location.href = `/?channelId=${channel.id}&channelName=${channel.name}&channelType=${channel.type}`;
       }, 20); // 20ms 대기 후 새로고침 및 이동
@@ -264,16 +271,16 @@ export default function Dashboard() {
     // 로컬 스토리지에서 토큰 삭제
     const username = currentMember;
     localStorage.removeItem("token");
-  
+
     // SWR의 캐시에서 currentMember 삭제
     currentUserMutate(null, false);
     handleMenuClose();
-  
+
     // Remove user from the UserList
     if (userListRef.current) {
       userListRef.current.handleRemoveUser(username);
     }
-  
+
     // 현재 URL로 새로고침
     window.location.href = window.location.href;
   };
@@ -620,7 +627,7 @@ export default function Dashboard() {
 
       <Dialog open={changePasswordOpen} onClose={handleChangePasswordClose}>
         <DialogContent>
-          <ChangePassword 
+          <ChangePassword
             onLoginOpen={handleLoginOpen}
             onClose={handleChangePasswordClose}
           />
@@ -693,7 +700,10 @@ export default function Dashboard() {
 
       <Dialog open={deleteAccountOpen} onClose={handleDeleteAccountClose}>
         <DialogContent>
-          <Typography>Are you sure you want to delete your account? This action cannot be undone.</Typography>
+          <Typography>
+            Are you sure you want to delete your account? This action cannot be
+            undone.
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteAccountClose} color="primary">
@@ -704,8 +714,6 @@ export default function Dashboard() {
           </Button>
         </DialogActions>
       </Dialog>
-
-
     </ThemeProvider>
   );
 }

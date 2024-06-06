@@ -26,7 +26,7 @@ function Copyright(props) {
   );
 }
 
-export default function FindPassword({ onLoginOpen}) {
+export default function FindPassword({ onLoginOpen }) {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -35,10 +35,13 @@ export default function FindPassword({ onLoginOpen}) {
     const data = new FormData(e.currentTarget);
     const { username, email } = Object.fromEntries(data.entries());
     try {
-      const response = await axios.post("/api/login/find", {
-        username,
-        email,
-      });
+      const response = await axios.post(
+        "http://localhost:8080/api/password-find",
+        {
+          username,
+          email,
+        }
+      );
       const password = response.data;
       setSuccessMessage(`Your password is: ${password}`);
       setError("");
