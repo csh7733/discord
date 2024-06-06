@@ -27,7 +27,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ChangePassword from "./ChangePassword";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import { mainListItems, secondaryListItems } from "./listItems";
+import { MainListItems, SecondaryListItems } from "./listItems";
 import ChatChannel from "./Chat";
 import UserList from "./UserList";
 import discordTheme from "./Theme";
@@ -278,11 +278,14 @@ export default function Dashboard() {
 
     // Remove user from the UserList
     if (userListRef.current) {
+      console.log("delete");
       userListRef.current.handleRemoveUser(username);
     }
 
     // 현재 URL로 새로고침
-    window.location.href = window.location.href;
+    setTimeout(() => {
+      window.location.href = window.location.href;
+    }, 50);
   };
 
   const handleLogin = async () => {
@@ -292,6 +295,7 @@ export default function Dashboard() {
 
     // Add user to the UserList
     if (userListRef.current) {
+      console.log("add user");
       userListRef.current.handleAddUser(name);
     }
   };
@@ -482,14 +486,14 @@ export default function Dashboard() {
           />
           <Divider />
           <List component="nav">
-            {mainListItems(
+            {MainListItems(
               channels,
               handleChannelSelect,
               handleAddChatChannel,
               handleContextMenu
             )}
             <Divider sx={{ my: 1 }} />
-            {secondaryListItems(
+            {SecondaryListItems(
               voiceChannels,
               handleChannelSelect,
               handleAddVoiceChannel,

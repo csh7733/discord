@@ -9,7 +9,7 @@ import Grid from "@mui/material/Grid";
 import Container from "@mui/material/Container";
 import ChatChannel from "./Chat";
 import VoiceChannel from "./Voice";
-import { mainListItems, secondaryListItems } from "./listItems";
+import { MainListItems, SecondaryListItems } from "./listItems";
 
 const socketUrl = "http://localhost:8080/ws";
 
@@ -88,9 +88,9 @@ const ChannelList = () => {
       <Grid container spacing={3} sx={{ flexGrow: 1 }}>
         <Grid item xs={3}>
           <List component="nav">
-            {mainListItems(channels, handleChannelSelect, handleAddChatChannel)}
+            {MainListItems(channels, handleChannelSelect, handleAddChatChannel)}
             <Divider sx={{ my: 1 }} />
-            {secondaryListItems(
+            {SecondaryListItems(
               voiceChannels,
               handleChannelSelect,
               handleAddVoiceChannel
