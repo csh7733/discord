@@ -52,24 +52,23 @@ export default function ChangePassword({ onLoginOpen, onClose }) {
     }
 
     try {
-        const response = await apiClient.post("/password/change", {
-          currentPassword: passwords.currentPassword,
-          newPassword: passwords.newPassword,
-          confirmNewPassword: passwords.confirmNewPassword,
-        });
-        setSuccessMessage("Password changed successfully.");
-        setError("");
-        onClose();
-      } catch (error) {
-        if (error.response) {
-          const errorMessage = error.response.data;
-          setError(errorMessage);
-        } else {
-          setError("Network error.");
-        }
-        setSuccessMessage("");
+      const response = await apiClient.put("/users/me/password", {
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword,
+        confirmNewPassword: passwords.confirmNewPassword,
+      });
+      setSuccessMessage("Password changed successfully.");
+      setError("");
+      onClose();
+    } catch (error) {
+      if (error.response) {
+        const errorMessage = error.response.data;
+        setError(errorMessage);
+      } else {
+        setError("Network error.");
       }
-      
+      setSuccessMessage("");
+    }
   };
 
   return (
@@ -140,8 +139,7 @@ export default function ChangePassword({ onLoginOpen, onClose }) {
         >
           Change Password
         </Button>
-        <Grid container>
-        </Grid>
+        <Grid container></Grid>
       </Box>
       <Copyright sx={{ mt: 5 }} />
     </Box>
